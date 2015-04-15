@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 
+
 // Slf4j Logging imports
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -625,7 +626,10 @@ public class Fetcher extends NutchTool implements Tool,
     private boolean skipTruncated;
 
     private boolean halted = false;
-
+    
+    //Used for real time updates to FetchDb
+    private FetchNode fetchNode;
+  
     public FetcherThread(Configuration conf) {
       this.setDaemon(true); // don't hang JVM on exit
       this.setName("FetcherThread"); // use an informative name
@@ -664,16 +668,18 @@ public class Fetcher extends NutchTool implements Tool,
           "fetcher.follow.outlinks.num.links", 4);
       outlinksDepthDivisor = conf.getInt(
           "fetcher.follow.outlinks.depth.divisor", 2);
+      
     }
 
     @SuppressWarnings("fallthrough")
     public void run() {
       activeThreads.incrementAndGet(); // count threads
-
+      
       FetchItem fit = null;
       try {
 
         while (true) {
+          this.fetchNode = new FetchNode();
           // check whether must be stopped
           if (isHalted()) {
             LOG.debug(getName() + " set to halted");
@@ -768,6 +774,11 @@ public class Fetcher extends NutchTool implements Tool,
               fetchQueues.finishFetchItem(fit);
 
               String urlString = fit.url.toString();
+              
+              //used for FetchNode
+              fetchNode.setStatus(status.getCode());
+              fetchNode.setFetchTime(System.currentTimeMillis());
+              fetchNode.setUrl(fit.url);
 
               reporter.incrCounter("FetcherStatus", status.getName(), 1);
 
@@ -884,7 +895,8 @@ public class Fetcher extends NutchTool implements Tool,
         activeThreads.decrementAndGet(); // count threads
         LOG.info("-finishing thread " + getName() + ", activeThreads="
             + activeThreads);
-      }
+        
+      }      
     }
 
     private Text handleRedirect(Text url, CrawlDatum datum, String urlString,
@@ -895,7 +907,7 @@ public class Fetcher extends NutchTool implements Tool,
 
       if (ignoreExternalLinks) {
         try {
-          String origHost = new URL(urlString).getHost().toLowerCase();
+          String origHost = new URL(urlString).getHost().toLowerCase();System.out.println("getting FetchNode instance");
           String newHost = new URL(newUrl).getHost().toLowerCase();
           if (!origHost.equals(newHost)) {
             if (LOG.isDebugEnabled()) {
@@ -1081,10 +1093,10 @@ public class Fetcher extends NutchTool implements Tool,
               }
             }
 
-            String fromHost;
-
+            String fromHost;   
+            
             // collect outlinks for subsequent db update
-            Outlink[] links = parseData.getOutlinks();
+            Outlink[] links = parseData.getOutlinks();   
             int outlinksToStore = Math.min(maxOutlinks, links.length);
             if (ignoreExternalLinks) {
               try {
@@ -1095,7 +1107,11 @@ public class Fetcher extends NutchTool implements Tool,
             } else {
               fromHost = null;
             }
-
+            
+            //used by fetchNode            
+            fetchNode.setOutlinks(links);
+            fetchNode.setTitle(parseData.getTitle());
+            FetchNodeDb.getInstance().put(fetchNode.getUrl().toString(), fetchNode);
             int validCount = 0;
 
             // Process all outlinks, normalize, filter and deduplicate
