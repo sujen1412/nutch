@@ -377,7 +377,7 @@ public class LinkDb extends NutchTool implements Tool,
     });
     segs.add(new Path(segmentsList[0].getPath()));
     try {
-      invert(db, segs.toArray(new Path[segs.size()]), normalize, filter, force);
+      invert(linkdb, segs.toArray(new Path[segs.size()]), normalize, filter, force);
       results.put(RESULT, Integer.toString(0));
       return results;
     } catch (Exception e) {
