@@ -349,7 +349,7 @@ public class LinkDb extends NutchTool implements Tool,
     Map<String, Object> results = new HashMap<String, Object>();
     String RESULT = "result";
     String linkdb = crawlId + "/linkdb";
-    Path db = new Path(linkdb);
+    Path linkDb = new Path(linkdb);
     ArrayList<Path> segs = new ArrayList<Path>();
     boolean filter = true;
     boolean normalize = true;
@@ -377,7 +377,7 @@ public class LinkDb extends NutchTool implements Tool,
     });
     segs.add(new Path(segmentsList[0].getPath()));
     try {
-      invert(linkdb, segs.toArray(new Path[segs.size()]), normalize, filter, force);
+      invert(linkDb, segs.toArray(new Path[segs.size()]), normalize, filter, force);
       results.put(RESULT, Integer.toString(0));
       return results;
     } catch (Exception e) {
