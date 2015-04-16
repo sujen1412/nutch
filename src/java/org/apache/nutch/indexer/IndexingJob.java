@@ -19,7 +19,9 @@ package org.apache.nutch.indexer;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.nutch.segment.SegmentChecker;
@@ -37,6 +39,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.nutch.util.HadoopFSUtil;
 import org.apache.nutch.util.NutchConfiguration;
 import org.apache.nutch.util.NutchJob;
+import org.apache.nutch.util.NutchTool;
 import org.apache.nutch.util.TimingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * Generic indexer which relies on the plugins implementing IndexWriter
  **/
 
-public class IndexingJob extends Configured implements Tool {
+public class IndexingJob extends NutchTool implements Tool {
 
   public static Logger LOG = LoggerFactory.getLogger(IndexingJob.class);
 
@@ -134,7 +137,7 @@ public class IndexingJob extends Configured implements Tool {
     }
 
     final Path crawlDb = new Path(args[0]);
-    Path linkDb = null;
+    Path linkDb = null; 
 
     final List<Path> segments = new ArrayList<Path>();
     String params = null;
@@ -187,5 +190,70 @@ public class IndexingJob extends Configured implements Tool {
     final int res = ToolRunner.run(NutchConfiguration.create(),
         new IndexingJob(), args);
     System.exit(res);
+  }
+
+  //Used for REST API
+  @Override
+  public Map<String, Object> run(Map<String, String> args) throws Exception {
+    if(args.size()<2){
+      throw new IllegalArgumentException("Required args crawldb, solrUrl, optional linkdb:<linkdb> segments:<segments> | dir:<segment_dir>");
+    }
+    boolean noCommit = false;
+    boolean deleteGone = false; 
+    boolean filter = false;
+    boolean normalize = false;
+    String params= null;
+    Configuration conf = getConf();
+    
+    String solrUrl = args.get("solrUrl");
+    Path crawlDb = new Path(args.get("crawldb"));
+    Path linkDb = null;
+    List<Path> segments = new ArrayList<Path>();
+    
+    if(args.containsKey("linkdb")){
+      linkDb = new Path(args.get("linkdb"));
+    }
+    
+    if(args.containsKey("dir")){
+      Path dir = new Path(args.get("dir"));
+      FileSystem fs = dir.getFileSystem(getConf());
+      FileStatus[] fstats = fs.listStatus(dir,
+          HadoopFSUtil.getPassDirectoriesFilter(fs));
+      Path[] files = HadoopFSUtil.getPaths(fstats);
+      for (Path p : files) {
+        if (SegmentChecker.isIndexable(p,fs)) {
+          segments.add(p);
+        }
+      }     
+    }
+    
+    if(args.containsKey("segments")){
+      String[] segs = args.get("segments").split(" ");
+      for(String seg : segs){
+        segments.add(new Path(seg));
+      }
+    }
+    if(args.containsKey("noCommit")){
+      noCommit = true;
+    }
+    if(args.containsKey("deleteGone")){
+      deleteGone = true;
+    }
+    if(args.containsKey("normalize")){
+      normalize = true;
+    }
+    if(args.containsKey("filter")){
+      filter = true;
+    }
+    if(args.containsKey("params")){
+      params = args.get("params");
+    }
+    conf.set("solr.server.url" , solrUrl);
+    setConf(conf);
+    index(crawlDb, linkDb, segments, noCommit, deleteGone, params, filter,
+        normalize);
+    Map<String, Object> results = new HashMap<String, Object>();
+    results.put("result", 0);
+    return results;
   }
 }
