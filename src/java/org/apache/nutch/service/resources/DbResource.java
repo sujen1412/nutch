@@ -17,6 +17,7 @@
 package org.apache.nutch.service.resources;
 
 
+
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
@@ -54,7 +55,8 @@ public class DbResource extends AbstractResource {
     }
     return null;
 
-  }	
+  }
+
 
   @SuppressWarnings("resource")
   private Response crawlDbStats(Configuration conf, Map<String, String> args){

@@ -22,6 +22,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.nutch.fetcher.FetchNodeDb;
 import org.apache.nutch.service.ConfManager;
 import org.apache.nutch.service.JobManager;
 import org.apache.nutch.service.NutchServer;
