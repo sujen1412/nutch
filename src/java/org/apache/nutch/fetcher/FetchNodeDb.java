@@ -7,12 +7,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class FetchNodeDb {
 
-  private Map<String, FetchNode> fetchNodeDbMap;
+  private Map<Integer, FetchNode> fetchNodeDbMap;
+  private int index;
   private static FetchNodeDb fetchNodeDbInstance = null;
   
   public FetchNodeDb(){    
     System.out.println("Calling FetchNode constructor");
-    fetchNodeDbMap = new ConcurrentHashMap<String, FetchNode>();
+    fetchNodeDbMap = new ConcurrentHashMap<Integer, FetchNode>();
+    index = 1;
   }
   
   public static FetchNodeDb getInstance(){
@@ -26,10 +28,10 @@ public class FetchNodeDb {
   
   public void put(String url, FetchNode fetchNode){
     System.out.println("FetchNodeDb : putting node - " + fetchNode.hashCode());
-    fetchNodeDbMap.put(url, fetchNode);    
+    fetchNodeDbMap.put(index++, fetchNode);    
   }  
-  public Iterator<?> getFetchNodeDb(){
-    return fetchNodeDbMap.entrySet().iterator();
+  public Map<Integer, FetchNode> getFetchNodeDb(){
+    return fetchNodeDbMap;
   }
 }
 
