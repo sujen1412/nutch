@@ -16,14 +16,18 @@
  */
 package org.apache.nutch.indexer;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.nutch.indexwriter.solr.SolrConstants;
 import org.apache.nutch.segment.SegmentChecker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -126,6 +130,59 @@ public class IndexingJob extends NutchTool implements Tool {
       FileSystem.get(job).delete(tmp, true);
     }
   }
+  
+  //used for the REST service
+  public void index(Path crawlDb, Path linkDb, List<Path> segments,
+      boolean noCommit, boolean deleteGone, String params, boolean filter,
+      boolean normalize, String solrUrl) throws IOException {
+
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    long start = System.currentTimeMillis();
+    LOG.info("Indexer: starting at " + sdf.format(start));
+
+    final JobConf job = new NutchJob(getConf());
+    job.setJobName("Indexer");
+
+    LOG.info("Indexer: deleting gone documents: " + deleteGone);
+    LOG.info("Indexer: URL filtering: " + filter);
+    LOG.info("Indexer: URL normalizing: " + normalize);
+
+    IndexWriters writers = new IndexWriters(getConf());
+    LOG.info(writers.describe());
+
+    IndexerMapReduce.initMRJob(crawlDb, linkDb, segments, job);
+
+    // NOW PASSED ON THE COMMAND LINE AS A HADOOP PARAM
+     job.set(SolrConstants.SERVER_URL, solrUrl);
+
+    job.setBoolean(IndexerMapReduce.INDEXER_DELETE, deleteGone);
+    job.setBoolean(IndexerMapReduce.URL_FILTERING, filter);
+    job.setBoolean(IndexerMapReduce.URL_NORMALIZING, normalize);
+
+    if (params != null) {
+      job.set(IndexerMapReduce.INDEXER_PARAMS, params);
+    }
+
+    job.setReduceSpeculativeExecution(false);
+
+    final Path tmp = new Path("tmp_" + System.currentTimeMillis() + "-"
+        + new Random().nextInt());
+
+    FileOutputFormat.setOutputPath(job, tmp);
+    try {
+      JobClient.runJob(job);
+      // do the commits once and for all the reducers in one go
+      if (!noCommit) {
+        writers.open(job, "commit");
+        writers.commit();
+      }
+      long end = System.currentTimeMillis();
+      LOG.info("Indexer: finished at " + sdf.format(end) + ", elapsed: "
+          + TimingUtil.elapsedTime(start, end));
+    } finally {
+      FileSystem.get(job).delete(tmp, true);
+    }
+  }
 
   public int run(String[] args) throws Exception {
     if (args.length < 2) {
@@ -194,9 +251,9 @@ public class IndexingJob extends NutchTool implements Tool {
 
   //Used for REST API
   @Override
-  public Map<String, Object> run(Map<String, String> args) throws Exception {
-    if(args.size()<2){
-      throw new IllegalArgumentException("Required args crawldb, solrUrl, optional linkdb:<linkdb> segments:<segments> | dir:<segment_dir>");
+  public Map<String, Object> run(Map<String, String> args, String crawlId) throws Exception {
+    if(args.size()<1){
+      throw new IllegalArgumentException("Required args solrUrl, optional linkdb:<linkdb>, segments:<segments> | dir:<segment_dir>");
     }
     boolean noCommit = false;
     boolean deleteGone = false; 
@@ -206,16 +263,17 @@ public class IndexingJob extends NutchTool implements Tool {
     Configuration conf = getConf();
     
     String solrUrl = args.get("solrUrl");
-    Path crawlDb = new Path(args.get("crawldb"));
+    String crawldb = crawlId+"/crawldb";
+    Path crawlDb = new Path(crawldb);
     Path linkDb = null;
     List<Path> segments = new ArrayList<Path>();
     
     if(args.containsKey("linkdb")){
-      linkDb = new Path(args.get("linkdb"));
+      linkDb = new Path(crawlId+"/linkdb");
     }
     
     if(args.containsKey("dir")){
-      Path dir = new Path(args.get("dir"));
+      Path dir = new Path(crawlId+"/segments");
       FileSystem fs = dir.getFileSystem(getConf());
       FileStatus[] fstats = fs.listStatus(dir,
           HadoopFSUtil.getPassDirectoriesFilter(fs));
@@ -228,10 +286,21 @@ public class IndexingJob extends NutchTool implements Tool {
     }
     
     if(args.containsKey("segments")){
-      String[] segs = args.get("segments").split(" ");
-      for(String seg : segs){
-        segments.add(new Path(seg));
-      }
+      String segment_dir = crawlId+"/segments";
+      File segmentsDir = new File(segment_dir);
+      File[] segmentsList = segmentsDir.listFiles();  
+      Arrays.sort(segmentsList, new Comparator<File>(){
+        @Override
+        public int compare(File f1, File f2) {
+          if(f1.lastModified()>f2.lastModified())
+            return -1;
+          else
+            return 0;
+        }      
+      });
+      
+      Path segment = new Path(segmentsList[0].getPath());
+      segments.add(segment);
     }
     if(args.containsKey("noCommit")){
       noCommit = true;
@@ -248,10 +317,9 @@ public class IndexingJob extends NutchTool implements Tool {
     if(args.containsKey("params")){
       params = args.get("params");
     }
-    conf.set("solr.server.url" , solrUrl);
     setConf(conf);
     index(crawlDb, linkDb, segments, noCommit, deleteGone, params, filter,
-        normalize);
+        normalize, solrUrl);
     Map<String, Object> results = new HashMap<String, Object>();
     results.put("result", 0);
     return results;
