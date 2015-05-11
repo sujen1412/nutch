@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.nutch.indexwriter.solr.SolrConstants;
+//import org.apache.nutch.indexwriter.solr.SolrConstants;
 import org.apache.nutch.segment.SegmentChecker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -153,7 +153,7 @@ public class IndexingJob extends NutchTool implements Tool {
     IndexerMapReduce.initMRJob(crawlDb, linkDb, segments, job);
 
     // NOW PASSED ON THE COMMAND LINE AS A HADOOP PARAM
-     job.set(SolrConstants.SERVER_URL, solrUrl);
+  //   job.set(SolrConstants.SERVER_URL, solrUrl);
 
     job.setBoolean(IndexerMapReduce.INDEXER_DELETE, deleteGone);
     job.setBoolean(IndexerMapReduce.URL_FILTERING, filter);
