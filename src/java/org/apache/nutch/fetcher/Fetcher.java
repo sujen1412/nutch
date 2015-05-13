@@ -132,21 +132,7 @@ public class Fetcher extends NutchTool implements Tool,
 
   LinkedList<FetcherThread> fetcherThreads = new LinkedList<FetcherThread>();
 
-    //Used for real time updates to FetchDb
-    private FetchNode fetchNode;
-  
-      
-          this.fetchNode = new FetchNode();
-              //used for FetchNode
-              fetchNode.setStatus(status.getCode());
-              fetchNode.setFetchTime(System.currentTimeMillis());
-              fetchNode.setUrl(fit.url);
-
-        
-            //used by fetchNode            
-            fetchNode.setOutlinks(links);
-            fetchNode.setTitle(parseData.getTitle());
-            FetchNodeDb.getInstance().put(fetchNode.getUrl().toString(), fetchNode);
+ 
   public Fetcher() {
 	  super(null);
   }
