@@ -27,7 +27,7 @@
   </info>
 
   <configurations>
-    <include file="../../../ivy/ivy-configurations.xml"/>
+    <include file="${nutch.root}/ivy/ivy-configurations.xml"/>
   </configurations>
 
   <publications>
@@ -36,10 +36,6 @@
   </publications>
 
   <dependencies>
-    <dependency org="org.apache.tika" name="tika-parsers" rev="1.8" conf="*->default">
-     <exclude org="org.apache.tika" name="tika-core" />
-    </dependency>
-    <override module="rome" rev="0.9"/>
   </dependencies>
   
 </ivy-module>

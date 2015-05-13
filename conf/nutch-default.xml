@@ -118,6 +118,15 @@
 </property>
 
 <property>
+   <name>http.robot.rules.whitelist</name> 	 
+   <value></value> 	 
+   <description>Comma separated list of hostnames or IP addresses to ignore 	 
+   robot rules parsing for. Use with care and only if you are explicitly 	 
+   allowed by the site owner to ignore the site's robots.txt! 	 
+   </description> 	 
+</property> 	 
+   	   	   	   	   	   	 	  	 
+<property>
   <name>http.robots.403.allow</name>
   <value>true</value>
   <description>Some servers return HTTP status 403 (Forbidden) if
@@ -155,7 +164,7 @@
 
 <property>
   <name>http.agent.version</name>
-  <value>Nutch-1.10-SNAPSHOT</value>
+  <value>Nutch-1.11-SNAPSHOT</value>
   <description>A version string to advertise in the User-Agent 
    header.</description>
 </property>
@@ -1531,6 +1540,14 @@
 </property>
 
 <!-- solr index properties -->
+<property>
+  <name>solr.server.url</name>
+  <value>http://127.0.0.1:8983/solr/</value>
+  <description>
+      Defines the Solr URL into which data should be indexed using the
+      indexer-solr plugin.
+  </description>
+</property>
 
 <property>
   <name>solr.mapping.file</name>
@@ -1612,7 +1629,7 @@
 <!-- subcollection properties -->
 
 <property>
-  <name>subcollection.default.field</name>
+  <name>subcollection.default.fieldname</name>
   <value>subcollection</value>
   <description>
   The default field name for the subcollections.

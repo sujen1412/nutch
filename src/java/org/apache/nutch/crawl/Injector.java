@@ -392,15 +392,15 @@ public class Injector extends NutchTool implements Tool {
     if(args.size()<1){
       throw new IllegalArgumentException("Required arguments <url_dir>");
     }
-    
     Map<String, Object> results = new HashMap<String, Object>();
-    String RESULT = "result";    
+    String RESULT = "result";
     String crawldb = crawlId+"/crawldb";
     String url_dir = args.get("url_dir");
 
     inject(new Path(crawldb), new Path(url_dir));
     results.put(RESULT, Integer.toString(0));
     return results;
+
 
   }
 
