@@ -12,7 +12,7 @@ public class FetchNodeDb {
   private static FetchNodeDb fetchNodeDbInstance = null;
   
   public FetchNodeDb(){    
-    System.out.println("Calling FetchNode constructor");
+//    System.out.println("Calling FetchNode constructor");
     fetchNodeDbMap = new ConcurrentHashMap<Integer, FetchNode>();
     index = 1;
   }
@@ -20,9 +20,10 @@ public class FetchNodeDb {
   public static FetchNodeDb getInstance(){
     
     if(fetchNodeDbInstance == null){
-      System.out.println("Creating FetchNode instance");
+//      System.out.println("Creating FetchNode instance");
       fetchNodeDbInstance = new FetchNodeDb();
     }
+//    System.out.println("FetchNodeDb Instance : " + fetchNodeDbInstance);
     return fetchNodeDbInstance;
   }
   
