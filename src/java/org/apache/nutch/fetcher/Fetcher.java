@@ -555,25 +555,35 @@ public class Fetcher extends NutchTool implements Tool,
     return activeThreads;
   }
   
+  /*
+   * Used by the Nutch REST API
+   */
   @Override
   public Map<String, Object> run(Map<String, String> args, String crawlId) throws Exception {
 
     Map<String, Object> results = new HashMap<String, Object>();
     String RESULT = "result";
-    String segment_dir = crawlId+"/segments";
-    File segmentsDir = new File(segment_dir);
-    File[] segmentsList = segmentsDir.listFiles();  
-    Arrays.sort(segmentsList, new Comparator<File>(){
-      @Override
-      public int compare(File f1, File f2) {
-        if(f1.lastModified()>f2.lastModified())
-          return -1;
-        else
-          return 0;
-      }      
-    });
+    String segmentToFetch;
+    if(args.containsKey("segment")) {
+    	segmentToFetch = args.get("segment");
+    }
+    else {
+      String segment_dir = crawlId+"/segments";
+      File segmentsDir = new File(segment_dir);
+      File[] segmentsList = segmentsDir.listFiles();  
+      Arrays.sort(segmentsList, new Comparator<File>(){
+        @Override
+        public int compare(File f1, File f2) {
+          if(f1.lastModified()>f2.lastModified())
+            return -1;
+          else
+            return 0;
+        }      
+      });
+      segmentToFetch = segmentsList[0].getPath();
+    }
     
-    Path segment = new Path(segmentsList[0].getPath());
+    Path segment = new Path(segmentToFetch);
 
     int threads = getConf().getInt("fetcher.threads.fetch", 10);
     boolean parsing = false;
