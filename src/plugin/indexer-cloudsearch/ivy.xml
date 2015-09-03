@@ -1,5 +1,4 @@
 <?xml version="1.0" ?>
-
 <!--
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -36,12 +35,7 @@
   </publications>
 
   <dependencies>
-    <dependency org="org.apache.tika" name="tika-parsers" rev="1.10" conf="*->default">
-     <exclude org="org.apache.tika" name="tika-core" />
-     <exclude org="org.apache.httpcomponents" name="httpclient" />
-     <exclude org="org.apache.httpcomponents" name="httpcore" />
-    </dependency>
-    <override module="rome" rev="0.9"/>
+	<dependency org="com.amazonaws" name="aws-java-sdk-cloudsearch" rev="1.10.0"/>
   </dependencies>
   
 </ivy-module>

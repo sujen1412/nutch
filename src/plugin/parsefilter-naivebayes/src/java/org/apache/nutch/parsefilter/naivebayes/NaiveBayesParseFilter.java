@@ -27,10 +27,7 @@ import org.apache.nutch.parse.HTMLMetaTags;
 import org.apache.nutch.parse.HtmlParseFilter;
 import org.apache.nutch.parse.Outlink;
 import org.apache.nutch.parse.Parse;
-import org.apache.nutch.parse.ParseData;
 import org.apache.nutch.parse.ParseResult;
-import org.apache.nutch.parse.ParseStatus;
-import org.apache.nutch.parse.ParseText;
 import org.apache.nutch.protocol.Content;
 
 import java.io.Reader;
@@ -140,11 +137,8 @@ public class NaiveBayesParseFilter implements HtmlParseFilter {
 
     } catch (IOException e) {
       LOG.error(StringUtils.stringifyException(e));
-
     }
-
     try {
-
       train();
     } catch (Exception e) {
 
@@ -172,7 +166,7 @@ public class NaiveBayesParseFilter implements HtmlParseFilter {
     if (!filterParse(text)) { // kick in the second tier
       // if parent page found
       // irrelevent
-      LOG.info("ParseFilter: NaiveBayes: Page found irrelevent:: " + url);
+      LOG.info("ParseFilter: NaiveBayes: Page found irrelevant:: " + url);
       LOG.info("Checking outlinks");
 
       Outlink[] out = null;

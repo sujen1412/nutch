@@ -15,30 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.nutch.service;
+package org.apache.nutch.indexwriter.cloudsearch;
 
-import java.util.Collection;
-import org.apache.nutch.service.model.request.JobConfig;
-import org.apache.nutch.service.model.response.JobInfo;
-import org.apache.nutch.service.model.response.JobInfo.State;
-
-public interface JobManager {
-
-  public static enum JobType{
-    INJECT, GENERATE, FETCH, PARSE, UPDATEDB, INDEX, READDB, CLASS, INVERTLINKS, DEDUP
-  };
-  public Collection<JobInfo> list(String crawlId, State state);
-
-  public JobInfo get(String crawlId, String id);
-
-  /**
-   * Creates specified job
-   * @param jobConfig
-   * @return JobInfo
-   */
-  public JobInfo create(JobConfig jobConfig);
-
-  public boolean abort(String crawlId, String id);
-
-  public boolean stop(String crawlId, String id);
+public interface CloudSearchConstants {
+  public static final String CLOUDSEARCH_PREFIX = "cloudsearch.";
+  public static final String ENDPOINT = CLOUDSEARCH_PREFIX + "endpoint";
+  public static final String REGION = CLOUDSEARCH_PREFIX + "region";
+  public static final String BATCH_DUMP = CLOUDSEARCH_PREFIX + "batch.dump";
+  public static final String MAX_DOCS_BATCH = CLOUDSEARCH_PREFIX
+      + "batch.maxSize";
 }
