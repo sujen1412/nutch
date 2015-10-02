@@ -1928,5 +1928,13 @@ CAUTION: Set the parser.timeout to -1 or a bigger value than 30, when using this
     Host on which the RabbitMQ server is running. Default "localhost".
   </description>
 </property>
+<property>
+  <name>rabbitmq.queue.routingkey</name>
+  <value></value>
+  <description>
+    The routingKey used by publisher to publish messages to specific queues. If the exchange type is "fanout", then this property is ignored. 
+  </description>
+</property>
+
 
 </configuration>

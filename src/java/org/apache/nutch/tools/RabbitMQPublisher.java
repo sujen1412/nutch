@@ -41,6 +41,7 @@ public class RabbitMQPublisher implements NutchPublisher {
   private static String HOST;
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQPublisher.class);
   private static Channel channel;
+  private static String QUEUE_ROUTINGKEY;
   
   @Override
   public void setConf(Configuration conf) {
@@ -48,6 +49,7 @@ public class RabbitMQPublisher implements NutchPublisher {
     EXCHANGE_SERVER = conf.get("rabbitmq.exchange.server", "fetcher_log");
     EXCHANGE_TYPE = conf.get("rabbitmq.exchange.type", "fanout");
     HOST = conf.get("rabbitmq.host", "localhost");
+    QUEUE_ROUTINGKEY = conf.get("rabbitmq.queue.routingkey", "");
     
     ConnectionFactory factory = new ConnectionFactory(); 
     factory.setHost(HOST);
@@ -65,7 +67,7 @@ public class RabbitMQPublisher implements NutchPublisher {
   public void publish(Object event) {
     // TODO Auto-generated method stub
     try {
-      channel.basicPublish(EXCHANGE_SERVER, "", null, getJSONString(event).getBytes());
+      channel.basicPublish(EXCHANGE_SERVER, QUEUE_ROUTINGKEY, null, getJSONString(event).getBytes());
     } catch (IOException e) {
       // TODO Auto-generated catch block
       LOG.error("Error occured while publishing - {}", StringUtils.stringifyException(e));
