@@ -35,6 +35,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.nutch.crawl.CrawlDatum;
 import org.apache.nutch.crawl.NutchWritable;
 import org.apache.nutch.crawl.SignatureFactory;
+import org.apache.nutch.fetcher.FetcherThreadEvent.PublishEventType;
 import org.apache.nutch.metadata.Metadata;
 import org.apache.nutch.metadata.Nutch;
 import org.apache.nutch.net.URLFilterException;
@@ -128,6 +129,9 @@ public class FetcherThread extends Thread {
   //Used by the REST service
   private FetchNode fetchNode;
   private boolean reportToNutchServer;
+  
+  //Used for publishing events
+  private FetcherThreadPublisher publisher; 
 
   public FetcherThread(Configuration conf, AtomicInteger activeThreads, FetchItemQueues fetchQueues, 
       QueueFeeder feeder, AtomicInteger spinWaiting, AtomicLong lastRequestStart, Reporter reporter,
@@ -156,6 +160,7 @@ public class FetcherThread extends Thread {
     this.storingContent = storingContent;
     this.pages = pages;
     this.bytes = bytes;
+    this.publisher = new FetcherThreadPublisher(conf);
     queueMode = conf.get("fetcher.queue.mode",
         FetchItemQueues.QUEUE_MODE_HOST);
     // check that the mode is known
@@ -239,6 +244,15 @@ public class FetcherThread extends Thread {
           // fetch the page
           redirecting = false;
           redirectCount = 0;
+          
+          //Publisher event
+          FetcherThreadEvent startEvent = new FetcherThreadEvent();
+          startEvent.setEventType(PublishEventType.START);
+          startEvent.setUrl(fit.getUrl().toString());
+          startEvent.setTimestamp(System.currentTimeMillis());
+          publisher.publish(startEvent);
+          
+          
           do {
             if (LOG.isInfoEnabled()) {
               LOG.info("fetching " + fit.url + " (queue crawl delay="
@@ -303,7 +317,15 @@ public class FetcherThread extends Thread {
               fetchNode.setFetchTime(System.currentTimeMillis());
               fetchNode.setUrl(fit.url);
             }
-
+            
+            //Publish fetch finish event 
+            FetcherThreadEvent endEvent = new FetcherThreadEvent();
+            endEvent.setEventType(PublishEventType.END);
+            endEvent.setUrl(fit.getUrl().toString());
+            endEvent.setTimestamp(System.currentTimeMillis());
+            endEvent.addEventData("status", status.getName());
+            publisher.publish(endEvent);
+            
             reporter.incrCounter("FetcherStatus", status.getName(), 1);
 
             switch (status.getCode()) {
@@ -655,7 +677,21 @@ public class FetcherThread extends Thread {
             outlinkList.add(links[i]);
             outlinks.add(toUrl);
           }
-
+          
+          //Publish fetch report event 
+          FetcherThreadEvent reportEvent = new FetcherThreadEvent();
+          reportEvent.setEventType(PublishEventType.REPORT);
+          reportEvent.setUrl(url.toString());
+          reportEvent.setTimestamp(System.currentTimeMillis());
+          reportEvent.addOutlinksToEventData(outlinkList);
+          reportEvent.addEventData("title", parseData.getTitle());
+          reportEvent.addEventData("content-type", parseData.getContentMeta().get("content-type"));
+          reportEvent.addEventData("score", datum.getScore());
+          reportEvent.addEventData("fetchTime", datum.getFetchTime());
+          reportEvent.addEventData("content-language", parseData.getContentMeta().get("content-language"));
+          System.out.println(parseData.getContentMeta().names());
+          publisher.publish(reportEvent);
+          
           // Only process depth N outlinks
           if (maxOutlinkDepth > 0 && outlinkDepth < maxOutlinkDepth) {
             reporter.incrCounter("FetcherOutlinks", "outlinks_detected",
