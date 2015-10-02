@@ -114,6 +114,9 @@
     	<dependency org="de.agilecoders.wicket" name="wicket-bootstrap-core" rev="0.9.2" conf="*->default" />
     	<dependency org="de.agilecoders.wicket" name="wicket-bootstrap-extensions" rev="0.9.2" conf="*->default" />
 
+		<!-- Rabbitmq dependencies -->
+		<dependency org="com.rabbitmq" name="amqp-client" rev="3.5.5" conf="*->default" />
+		
 		<!--global exclusion -->
 		<exclude module="jmxtools" />
 		<exclude module="jms" />
