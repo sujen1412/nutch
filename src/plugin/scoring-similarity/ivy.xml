@@ -36,8 +36,6 @@
   </publications>
 
   <dependencies>
-  	<dependency org="org.apache.lucene" name="lucene-core" rev="5.3.0"/>
-  	<dependency org="org.apache.commons" name="commons-math3" rev="3.5"/>
   </dependencies>
   
 </ivy-module>
