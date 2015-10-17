@@ -30,6 +30,8 @@ public class LuceneTokenizer {
    * @param stemFilterType - Type of stemming to perform 
    */
   public LuceneTokenizer(String content, TokenizerType tokenizer, boolean useStopFilter, StemFilterType stemFilterType) {
+    this.tokenizer = tokenizer;
+    this.stemFilterType = stemFilterType;
     if(useStopFilter) {
       stopSet = StandardAnalyzer.STOP_WORDS_SET;
     }
@@ -41,14 +43,29 @@ public class LuceneTokenizer {
    * @param content - The text to tokenize
    * @param tokenizer - the type of tokenizer to use CLASSIC or DEFAULT 
    * @param stopSet - Provide a set of user defined stop words
-   * @param addToDefault - If set to true, the stopSet words will be added to the Lucene default stop set
+   * @param addToDefault - If set to true, the stopSet words will be added to the Lucene default stop set.
+   * If false, then only the user provided words will be used as the stop set
    * @param stemFilterType
    */
   public LuceneTokenizer(String content, TokenizerType tokenizer, List<String> stopWords, boolean addToDefault, StemFilterType stemFilterType) {
+    this.tokenizer = tokenizer;
+    this.stemFilterType = stemFilterType;
     if(addToDefault) {
+      stopSet = StandardAnalyzer.STOP_WORDS_SET;
       stopSet.addAll(stopWords);
     }
+    else {
+      stopSet = new CharArraySet(stopWords, true);
+    }
     tokenStream = createTokenStream(content);
+  }
+  
+  /**
+   * Returns the tokenStream created by the Tokenizer
+   * @return
+   */
+  public TokenStream getTokenStream() {
+    return tokenStream;
   }
   
   private TokenStream createTokenStream(String content) {

@@ -17,8 +17,9 @@
 package org.apache.nutch.scoring.similarity.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.Reader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -29,15 +30,25 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
+import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.MultiFields;
+import org.apache.lucene.index.SegmentReader;
+import org.apache.lucene.index.SlowCompositeReaderWrapper;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
+import org.apache.nutch.scoring.similarity.util.LuceneAnalyzerUtil.StemFilterType;
+import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
 
 /**
  * This class provides the functionality to read/write Lucene indexes
@@ -45,61 +56,58 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class LuceneIndexManager {
- 
-  private static Directory ramDirectory = new RAMDirectory();
+
+  private static Directory ramDirectory;
   public static final String FIELD_CONTENT = "contents";
   private static final Logger LOG = LoggerFactory.getLogger(LuceneIndexManager.class);
   private static boolean isIndexed = false;
-
+  private static IndexReader reader;
+  
   public static synchronized void createIndex(String fileToIndexDirectory, Analyzer analyzer, Configuration conf) {
-    if(isIndexed) {
+    if(isIndexed){
+      LOG.info("Index exists, skipping index creation");
       return;
     }
-    
     try {
+      ramDirectory = new RAMDirectory();
       LOG.info("Setting files to index directory to {}", fileToIndexDirectory);
-      IndexWriter indexWriter = new IndexWriter(ramDirectory, new IndexWriterConfig(Version.LATEST, analyzer));
+      IndexWriterConfig config = new IndexWriterConfig(Version.LATEST, analyzer);
+      config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+      IndexWriter indexWriter = new IndexWriter(ramDirectory, config);
       Path dir = new Path(fileToIndexDirectory);
       FileSystem fs = FileSystem.get(conf);
       FileStatus[] fileStatus = fs.listStatus(dir);
-      Document document = new Document();
-      FieldType type = new FieldType();
-      type.setIndexed(true);
-      type.setStoreTermVectors(true);
-      Field field = null;
-      BufferedReader br;
+      Tika parser = new Tika();
       for(int i=0;i<fileStatus.length;i++) {
-        br = new BufferedReader(new InputStreamReader(fs.open(fileStatus[i].getPath())));
-        
-        if(field == null) {
-          field = new Field(FIELD_CONTENT, br, type);
-        }
-        else {
-          field.setReaderValue(br);
-        }
-        LOG.debug("Adding {} file to index",fileStatus[i].getPath());
+        FieldType type = new FieldType();
+        type.setIndexed(true);
+        type.setStoreTermVectors(true);
+        Reader parsedDoc = parser.parse(fs.open(fileStatus[i].getPath()));
+        Document document = new Document();
+        BufferedReader br = new BufferedReader(parsedDoc);
+        Field field = new Field(FIELD_CONTENT, br, type);
+        LOG.info("Adding {} file to index",fileStatus[i].getPath());
         document.add(field);
         indexWriter.addDocument(document);
-        document.removeField(FIELD_CONTENT);
       }
       indexWriter.close();
+      LOG.info("Completed creating Index");
       isIndexed = true;
-      
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
-  
+
   public static IndexReader getIndexReader() {
-    try {
-      IndexReader reader = DirectoryReader.open(ramDirectory);
+    if(reader!=null)
       return reader;
+    try {
+      reader = DirectoryReader.open(ramDirectory);
     } catch (IOException e) {
       // TODO Auto-generated catch block
       LOG.error("Could not open reader : ", StringUtils.stringifyException(e));
-      e.printStackTrace();
     }
-    return null;
+    return reader;
   }
 }
