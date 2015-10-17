@@ -1,7 +1,7 @@
 /**
  * 
  */
-/**
+/** Implements the cosine similarity metric for scoring relevant documents 
  * @author Sujen Shah
  *
  */
