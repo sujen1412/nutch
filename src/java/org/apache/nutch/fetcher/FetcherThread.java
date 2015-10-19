@@ -131,7 +131,8 @@ public class FetcherThread extends Thread {
   private boolean reportToNutchServer;
   
   //Used for publishing events
-  private FetcherThreadPublisher publisher; 
+  private FetcherThreadPublisher publisher;
+  private boolean activatePublisher;
 
   public FetcherThread(Configuration conf, AtomicInteger activeThreads, FetchItemQueues fetchQueues, 
       QueueFeeder feeder, AtomicInteger spinWaiting, AtomicLong lastRequestStart, Reporter reporter,
@@ -160,7 +161,10 @@ public class FetcherThread extends Thread {
     this.storingContent = storingContent;
     this.pages = pages;
     this.bytes = bytes;
-    this.publisher = new FetcherThreadPublisher(conf);
+
+    if((activatePublisher=conf.getBoolean("fetcher.publisher", false)))
+      this.publisher = new FetcherThreadPublisher(conf);
+    
     queueMode = conf.get("fetcher.queue.mode",
         FetchItemQueues.QUEUE_MODE_HOST);
     // check that the mode is known
@@ -246,12 +250,10 @@ public class FetcherThread extends Thread {
           redirectCount = 0;
           
           //Publisher event
-          FetcherThreadEvent startEvent = new FetcherThreadEvent();
-          startEvent.setEventType(PublishEventType.START);
-          startEvent.setUrl(fit.getUrl().toString());
-          startEvent.setTimestamp(System.currentTimeMillis());
-          publisher.publish(startEvent);
-          
+          if(activatePublisher) {
+            FetcherThreadEvent startEvent = new FetcherThreadEvent(PublishEventType.START, fit.getUrl().toString());
+            publisher.publish(startEvent);
+          }
           
           do {
             if (LOG.isInfoEnabled()) {
@@ -318,14 +320,12 @@ public class FetcherThread extends Thread {
               fetchNode.setUrl(fit.url);
             }
             
-            //Publish fetch finish event 
-            FetcherThreadEvent endEvent = new FetcherThreadEvent();
-            endEvent.setEventType(PublishEventType.END);
-            endEvent.setUrl(fit.getUrl().toString());
-            endEvent.setTimestamp(System.currentTimeMillis());
-            endEvent.addEventData("status", status.getName());
-            publisher.publish(endEvent);
-            
+            //Publish fetch finish event
+            if(activatePublisher) {
+              FetcherThreadEvent endEvent = new FetcherThreadEvent(PublishEventType.END, fit.getUrl().toString());
+              endEvent.addEventData("status", status.getName());
+              publisher.publish(endEvent);
+            }
             reporter.incrCounter("FetcherStatus", status.getName(), 1);
 
             switch (status.getCode()) {
@@ -680,19 +680,16 @@ public class FetcherThread extends Thread {
           }
           
           //Publish fetch report event 
-          FetcherThreadEvent reportEvent = new FetcherThreadEvent();
-          reportEvent.setEventType(PublishEventType.REPORT);
-          reportEvent.setUrl(url.toString());
-          reportEvent.setTimestamp(System.currentTimeMillis());
-          reportEvent.addOutlinksToEventData(outlinkList);
-          reportEvent.addEventData("title", parseData.getTitle());
-          reportEvent.addEventData("content-type", parseData.getContentMeta().get("content-type"));
-          reportEvent.addEventData("score", datum.getScore());
-          reportEvent.addEventData("fetchTime", datum.getFetchTime());
-          reportEvent.addEventData("content-language", parseData.getContentMeta().get("content-language"));
-          System.out.println(parseData.getContentMeta().names());
-          publisher.publish(reportEvent);
-          
+          if(activatePublisher) {
+            FetcherThreadEvent reportEvent = new FetcherThreadEvent(PublishEventType.REPORT, url.toString());
+            reportEvent.addOutlinksToEventData(outlinkList);
+            reportEvent.addEventData(Nutch.FETCH_EVENT_TITLE, parseData.getTitle());
+            reportEvent.addEventData(Nutch.FETCH_EVENT_CONTENTTYPE, parseData.getContentMeta().get("content-type"));
+            reportEvent.addEventData(Nutch.FETCH_EVENT_SCORE, datum.getScore());
+            reportEvent.addEventData(Nutch.FETCH_EVENT_FETCHTIME, datum.getFetchTime());
+            reportEvent.addEventData(Nutch.FETCH_EVENT_CONTENTLANG, parseData.getContentMeta().get("content-language"));
+            publisher.publish(reportEvent);
+          }
           // Only process depth N outlinks
           if (maxOutlinkDepth > 0 && outlinkDepth < maxOutlinkDepth) {
             reporter.incrCounter("FetcherOutlinks", "outlinks_detected",

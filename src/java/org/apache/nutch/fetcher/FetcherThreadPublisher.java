@@ -19,6 +19,8 @@ package org.apache.nutch.fetcher;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.nutch.tools.NutchPublisher;
 import org.apache.nutch.tools.RabbitMQPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class handles the publishing of the events to the queue implementation. 
@@ -27,7 +29,8 @@ import org.apache.nutch.tools.RabbitMQPublisher;
  */
 public class FetcherThreadPublisher {
 
-  NutchPublisher publisher;
+  private static NutchPublisher publisher;
+  private static final Logger LOG = LoggerFactory.getLogger(FetcherThreadPublisher.class);
   
   public FetcherThreadPublisher(Configuration conf) { 
     String publisherImpl = conf.get("publisher.queue.type", "rabbitmq");
@@ -40,7 +43,12 @@ public class FetcherThreadPublisher {
   }
   
   public void publish(FetcherThreadEvent event) {
-    publisher.publish(event);
+    if(publisher!=null) {
+      publisher.publish(event);
+    }
+    else {
+      LOG.info("Could not instantiate publisher implementation, continuing without publishing");
+    }
   }
   
 }

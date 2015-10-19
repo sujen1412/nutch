@@ -945,6 +945,12 @@
    fetcher.bandwidth.target. Defaults to 30 and must be at least 1.</description>
 </property>
 
+<property>
+	<name>fetcher.publisher</name>
+	<value>false</value>
+	<description>Set this value to true if you want to use an implementation of the Publisher/Subscriber model. Make sure to set corresponding
+	Publisher implementation specific properties</description>
+</property> 
 <!-- moreindexingfilter plugin properties -->
 
 <property>

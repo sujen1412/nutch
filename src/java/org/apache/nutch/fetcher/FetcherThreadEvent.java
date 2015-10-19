@@ -34,11 +34,18 @@ import org.apache.nutch.parse.Outlink;
 public class FetcherThreadEvent implements Serializable{
 
   public static enum PublishEventType {START, END, REPORT}
-
+ 
+  
   private PublishEventType eventType;
   private Map<String, Object> eventData;
   private String url; 
   private Long timestamp; 
+  
+  public FetcherThreadEvent(PublishEventType eventType, String url) {
+    this.eventType = eventType;
+    this.url = url;
+    this.timestamp = System.currentTimeMillis();
+  }
   
   public PublishEventType getEventType() {
     return eventType;
