@@ -22,11 +22,16 @@ import java.util.Map;
 public class DocVector {
 
   public HashMap<Integer, Long> termVector;
+  public HashMap<String, Integer> termFreqVector;
 
-  public DocVector(int size) {
-    termVector = new HashMap<>();
+  public DocVector() {
+    termFreqVector = new HashMap<>();
   }
 
+  public void setTermFreqVector(HashMap<String, Integer> termFreqVector) {
+    this.termFreqVector = termFreqVector;
+  }
+  
   public void setVectorEntry(int pos, long freq) {
     termVector.put(pos, freq);
   }
