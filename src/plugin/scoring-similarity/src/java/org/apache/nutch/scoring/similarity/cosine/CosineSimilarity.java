@@ -16,11 +16,13 @@
  */
 package org.apache.nutch.scoring.similarity.cosine;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.util.StringUtils;
 import org.apache.nutch.crawl.CrawlDatum;
 import org.apache.nutch.parse.Parse;
 import org.apache.nutch.parse.ParseData;
@@ -44,15 +46,21 @@ public class CosineSimilarity implements SimilarityModel{
   @Override
   public float setURLScoreAfterParsing(Text url, Content content, Parse parse) {
     // TODO Auto-generated method stub
+    float score = 1;
     if(!Model.isModelCreated){
-      Model.createModel(conf.get("cosine.corpus.path"), conf);
+      try {
+        Model.createModel(conf.get("cosine.corpus.path"), conf);
+        String metatags = parse.getData().getParseMeta().get("metatag.keyword");
+        String metaDescription = parse.getData().getParseMeta().get("metatag.description");
+        DocVector docVector = Model.createDocVector(parse.getText()+metaDescription+metatags);
+        score = Model.computeCosineSimilarity(docVector);
+      
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        LOG.error("Error creating Cosine Model, setting scores of urls to 1 : {}", StringUtils.stringifyException(e));
+      }
     }
-    String metatags = parse.getData().getParseMeta().get("metatag.keyword");
-    String metaDescription = parse.getData().getParseMeta().get("metatag.description");
-    DocVector docVector = Model.createDocVector(parse.getText()+metaDescription+metatags);
-    
-    float score = Model.computeCosineSimilarity(docVector);
-    LOG.info("Setting score of {} to {}",url, score);
+    LOG.debug("Setting score of {} to {}",url, score);
     return score;
   }
 

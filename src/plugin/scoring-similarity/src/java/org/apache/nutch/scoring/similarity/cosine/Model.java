@@ -1,25 +1,23 @@
 package org.apache.nutch.scoring.similarity.cosine;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.index.Fields;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.MultiFields;
-import org.apache.lucene.index.Terms;
-import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.util.BytesRef;
-import org.apache.nutch.scoring.similarity.util.LuceneAnalyzerUtil;
 import org.apache.nutch.scoring.similarity.util.LuceneAnalyzerUtil.StemFilterType;
-import org.apache.nutch.scoring.similarity.util.LuceneIndexManager;
 import org.apache.nutch.scoring.similarity.util.LuceneTokenizer;
 import org.apache.nutch.scoring.similarity.util.LuceneTokenizer.TokenizerType;
+import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,63 +28,35 @@ import org.slf4j.LoggerFactory;
  */
 public class Model {
 
-  public static DocVector[] docVectors;
-  private static Map<String, Integer> allTerms;
+  public static ArrayList<DocVector> docVectors;
   private static final Logger LOG = LoggerFactory.getLogger(Model.class);
   public static boolean isModelCreated = false;
   
-  public static synchronized void createModel(String filesToIndex, Configuration conf) {
+  public static synchronized void createModel(String fileToIndexDirectory, Configuration conf) throws IOException {
     if(isModelCreated) {
       LOG.info("Model exists, skipping model creation");
       return;
     }
     LOG.info("Creating Cosine model");
-    LuceneIndexManager.createIndex(filesToIndex, new LuceneAnalyzerUtil(StemFilterType.PORTERSTEM_FILTER, true), conf);
-    IndexReader reader = LuceneIndexManager.getIndexReader();
-    if(reader != null) {
-      populateTerms(reader);
-      int numOfDocs = reader.numDocs();
-      docVectors = new DocVector[numOfDocs];
-      for(int docId=0; docId<numOfDocs; docId++) {
-        docVectors[docId] = createDocVector(reader, docId);
+    
+    Path dir = new Path(fileToIndexDirectory);
+    FileSystem fs = FileSystem.get(conf);
+    FileStatus[] fileStatus = fs.listStatus(dir);
+    Tika parser = new Tika();
+    
+    for(FileStatus file: fileStatus) {
+      String parsedContent;
+      try {
+        parsedContent = parser.parseToString(fs.open(file.getPath()));
+        docVectors.add(createDocVector(parsedContent));
+      } catch (TikaException e) {
+        // TODO Auto-generated catch block
+        LOG.warn("Failed to parse {} : {}",file.getPath(), StringUtils.stringifyException(e));
       }
+     
     }
     LOG.info("Cosine model creation complete");
     isModelCreated = true;
-  }
-  
-  private static synchronized DocVector createDocVector(IndexReader reader, int docID) {
-    DocVector docVector = new DocVector(allTerms.size());
-    try {
-      Terms terms = reader.getTermVector(docID, LuceneIndexManager.FIELD_CONTENT);
-      TermsEnum itr = terms.iterator(null);
-      BytesRef text;
-      while((text = itr.next()) != null) {
-        long freq = itr.totalTermFreq();
-        docVector.setVectorEntry(allTerms.get(text.utf8ToString()), freq);
-      }
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      LOG.error("Error creating DocVector : {}",StringUtils.stringifyException(e));
-    }
-    return docVector;
-  }
-
-  private static synchronized void populateTerms(IndexReader reader) {
-    allTerms = new HashMap<String, Integer>();
-    try {
-      Terms terms = MultiFields.getTerms(reader, LuceneIndexManager.FIELD_CONTENT);
-      TermsEnum itr = terms.iterator(null);
-      BytesRef text;
-      int pos = 0;
-      while((text = itr.next()) != null) {
-        String term = text.utf8ToString();
-        allTerms.put(term, pos++);       
-      }
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      LOG.error("Error populating terms in Cosine Model : {}",StringUtils.stringifyException(e));
-    }
   }
   
   /**
@@ -113,12 +83,8 @@ public class Model {
             termVector.put(term, 1);
           }
         }
-        DocVector docVector = new DocVector(allTerms.size());
-        for(Map.Entry<String, Integer> entry : termVector.entrySet()) {
-          if(allTerms.containsKey(entry.getKey())) {
-            docVector.setVectorEntry(allTerms.get(entry.getKey()), entry.getValue());
-          }
-        }
+        DocVector docVector = new DocVector();
+        docVector.setTermFreqVector(termVector);
         return docVector;
       } catch (IOException e) {
         // TODO Auto-generated catch block
@@ -128,7 +94,7 @@ public class Model {
   }
   
   public static float computeCosineSimilarity(DocVector docVector) {
-    float scores[] = new float[docVectors.length];
+    float scores[] = new float[docVectors.size()];
     int i=0;
     for(DocVector corpusDoc : docVectors) {
       float numerator = docVector.dotProduct(corpusDoc);
