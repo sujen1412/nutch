@@ -31,68 +31,71 @@ public class Model {
   public static ArrayList<DocVector> docVectors;
   private static final Logger LOG = LoggerFactory.getLogger(Model.class);
   public static boolean isModelCreated = false;
-  
+
   public static synchronized void createModel(String fileToIndexDirectory, Configuration conf) throws IOException {
     if(isModelCreated) {
       LOG.info("Model exists, skipping model creation");
       return;
     }
     LOG.info("Creating Cosine model");
-    
+
     Path dir = new Path(fileToIndexDirectory);
     FileSystem fs = FileSystem.get(conf);
     FileStatus[] fileStatus = fs.listStatus(dir);
     Tika parser = new Tika();
-    
+
     for(FileStatus file: fileStatus) {
       String parsedContent;
       try {
         parsedContent = parser.parseToString(fs.open(file.getPath()));
+        LOG.info("Parsed content : {}", parsedContent);
         docVectors.add(createDocVector(parsedContent));
-      } catch (TikaException e) {
+      } catch (Exception e) {
         // TODO Auto-generated catch block
         LOG.warn("Failed to parse {} : {}",file.getPath(), StringUtils.stringifyException(e));
       }
-     
+
     }
-    LOG.info("Cosine model creation complete");
-    isModelCreated = true;
+    if(docVectors.size()>0) {
+      LOG.info("Cosine model creation complete");
+      isModelCreated = true;
+    }
   }
-  
+
   /**
    * Used to create a DocVector from given String text. Used during the parse stage of the crawl 
    * cycle to create a DocVector of the currently parsed page from the parseText attribute value
    * @param content
    */
   public static DocVector createDocVector(String content) {
-      LuceneTokenizer tokenizer = new LuceneTokenizer(content, TokenizerType.CLASSIC, true, 
-          StemFilterType.PORTERSTEM_FILTER);
-      TokenStream tStream = tokenizer.getTokenStream();
-      HashMap<String, Integer> termVector = new HashMap<>();
-      try {
-        CharTermAttribute charTermAttribute = tStream.addAttribute(CharTermAttribute.class);
-        tStream.reset();
-        while(tStream.incrementToken()) {
-          String term = charTermAttribute.toString();
-          if(termVector.containsKey(term)) {
-            int count = termVector.get(term);
-            count++;
-            termVector.put(term, count);
-          }
-          else {
-            termVector.put(term, 1);
-          }
+    LuceneTokenizer tokenizer = new LuceneTokenizer(content, TokenizerType.CLASSIC, true, 
+        StemFilterType.PORTERSTEM_FILTER);
+    TokenStream tStream = tokenizer.getTokenStream();
+    HashMap<String, Integer> termVector = new HashMap<>();
+    try {
+      CharTermAttribute charTermAttribute = tStream.addAttribute(CharTermAttribute.class);
+      tStream.reset();
+      while(tStream.incrementToken()) {
+        String term = charTermAttribute.toString();
+        if(termVector.containsKey(term)) {
+          int count = termVector.get(term);
+          count++;
+          termVector.put(term, count);
         }
-        DocVector docVector = new DocVector();
-        docVector.setTermFreqVector(termVector);
-        return docVector;
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        LOG.error("Error creating docVector for parsed page : {}",StringUtils.stringifyException(e));
+        else {
+          termVector.put(term, 1);
+        }
       }
-      return null;
+      DocVector docVector = new DocVector();
+      docVector.setTermFreqVector(termVector);
+      return docVector;
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      LOG.error("Error creating docVector for parsed page : {}",StringUtils.stringifyException(e));
+    }
+    return null;
   }
-  
+
   public static float computeCosineSimilarity(DocVector docVector) {
     float scores[] = new float[docVectors.size()];
     int i=0;
