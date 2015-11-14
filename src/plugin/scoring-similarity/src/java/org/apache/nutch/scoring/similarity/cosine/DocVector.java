@@ -38,9 +38,9 @@ public class DocVector {
   
   public float dotProduct(DocVector docVector) {
     float product = 0;
-    for(Map.Entry<Integer, Long> entry : termVector.entrySet()) {
-      if(docVector.termVector.containsKey(entry.getKey())) {
-        product += docVector.termVector.get(entry.getKey())*entry.getValue();
+    for(Map.Entry<String, Integer> entry : termFreqVector.entrySet()) {
+      if(docVector.termFreqVector.containsKey(entry.getKey())) {
+        product += docVector.termFreqVector.get(entry.getKey())*entry.getValue();
       }
     }
     return product;
@@ -48,7 +48,7 @@ public class DocVector {
   
   public float getL2Norm() {
     float sum = 0;
-    for(Map.Entry<Integer, Long> entry : termVector.entrySet()) {
+    for(Map.Entry<String, Integer> entry : termFreqVector.entrySet()) {
       sum += entry.getValue()*entry.getValue();
     }
     return (float) Math.sqrt(sum);

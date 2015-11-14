@@ -55,7 +55,7 @@ public class CosineSimilarity implements SimilarityModel{
         DocVector docVector = Model.createDocVector(parse.getText()+metaDescription+metatags);
         score = Model.computeCosineSimilarity(docVector);
       
-      } catch (IOException e) {
+      } catch (Exception e) {
         // TODO Auto-generated catch block
         LOG.error("Error creating Cosine Model, setting scores of urls to 1 : {}", StringUtils.stringifyException(e));
       }
