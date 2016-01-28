@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -17,7 +16,6 @@ import org.apache.nutch.scoring.similarity.util.LuceneAnalyzerUtil.StemFilterTyp
 import org.apache.nutch.scoring.similarity.util.LuceneTokenizer;
 import org.apache.nutch.scoring.similarity.util.LuceneTokenizer.TokenizerType;
 import org.apache.tika.Tika;
-import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +26,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Model {
 
-  public static ArrayList<DocVector> docVectors;
+  public static ArrayList<DocVector> docVectors = new ArrayList<>();
   private static final Logger LOG = LoggerFactory.getLogger(Model.class);
   public static boolean isModelCreated = false;
 
@@ -48,7 +46,7 @@ public class Model {
       String parsedContent;
       try {
         parsedContent = parser.parseToString(fs.open(file.getPath()));
-        LOG.info("Parsed content : {}", parsedContent);
+        LOG.info("Parsed content : {}", parsedContent.length());
         docVectors.add(createDocVector(parsedContent));
       } catch (Exception e) {
         // TODO Auto-generated catch block
