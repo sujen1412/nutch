@@ -1,6 +1,9 @@
 package org.apache.nutch.scoring.similarity.cosine;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,34 +33,31 @@ public class Model {
   private static final Logger LOG = LoggerFactory.getLogger(Model.class);
   public static boolean isModelCreated = false;
 
-  public static synchronized void createModel(String fileToIndexDirectory, Configuration conf) throws IOException {
+  public static synchronized void createModel(Configuration conf) throws IOException {
     if(isModelCreated) {
       LOG.info("Model exists, skipping model creation");
       return;
     }
     LOG.info("Creating Cosine model");
-
-    Path dir = new Path(fileToIndexDirectory);
-    FileSystem fs = FileSystem.get(conf);
-    FileStatus[] fileStatus = fs.listStatus(dir);
-    Tika parser = new Tika();
-
-    for(FileStatus file: fileStatus) {
-      String parsedContent;
-      try {
-        parsedContent = parser.parseToString(fs.open(file.getPath()));
-        LOG.info("Parsed content : {}", parsedContent.length());
-        docVectors.add(createDocVector(parsedContent));
-      } catch (Exception e) {
-        // TODO Auto-generated catch block
-        LOG.warn("Failed to parse {} : {}",file.getPath(), StringUtils.stringifyException(e));
+    StringBuilder sb = new StringBuilder();
+    try {
+      String line;
+      BufferedReader br = new BufferedReader(conf.getConfResourceAsReader((conf.get("cosine.goldstandard.file"))));
+      while ((line = br.readLine()) != null) {
+        sb.append(line);
       }
-
+      LOG.info("Parsed content : {}", sb.length());
+      docVectors.add(createDocVector(sb.toString()));
+    } catch (Exception e) {
+      LOG.warn("Failed to parse {} : {}",conf.get("cosine.goldstandard.file","goldstandard.txt.template"), 
+          StringUtils.stringifyException(e));
     }
     if(docVectors.size()>0) {
       LOG.info("Cosine model creation complete");
       isModelCreated = true;
     }
+    else
+      LOG.info("Cosine model creation failed");
   }
 
   /**
@@ -88,8 +88,7 @@ public class Model {
       docVector.setTermFreqVector(termVector);
       return docVector;
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      LOG.error("Error creating docVector for parsed page : {}",StringUtils.stringifyException(e));
+      LOG.error("Error creating DocVector for parsed page : {}",StringUtils.stringifyException(e));
     }
     return null;
   }
@@ -107,3 +106,4 @@ public class Model {
     return scores[scores.length-1];
   }
 }
+

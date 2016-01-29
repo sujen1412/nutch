@@ -36,31 +36,28 @@ public class CosineSimilarity implements SimilarityModel{
   private Configuration conf; 
   private final static Logger LOG = LoggerFactory
       .getLogger(CosineSimilarity.class);
-  
+
   @Override
   public void setConf(Configuration conf) {
-    // TODO Auto-generated method stub
     this.conf = conf;
   }
 
   @Override
   public float setURLScoreAfterParsing(Text url, Content content, Parse parse) {
-    // TODO Auto-generated method stub
     float score = 1;
-    if(!Model.isModelCreated){
-      try {
-        Model.createModel(conf.get("cosine.corpus.path"), conf);
-        String metatags = parse.getData().getParseMeta().get("metatag.keyword");
-        String metaDescription = parse.getData().getParseMeta().get("metatag.description");
-        DocVector docVector = Model.createDocVector(parse.getText()+metaDescription+metatags);
-        score = Model.computeCosineSimilarity(docVector);
-      
-      } catch (Exception e) {
-        // TODO Auto-generated catch block
-        LOG.error("Error creating Cosine Model, setting scores of urls to 1 : {}", StringUtils.stringifyException(e));
+
+    try {
+      if(!Model.isModelCreated){
+        Model.createModel(conf);
       }
+      String metatags = parse.getData().getParseMeta().get("metatag.keyword");
+      String metaDescription = parse.getData().getParseMeta().get("metatag.description");
+      DocVector docVector = Model.createDocVector(parse.getText()+metaDescription+metatags);
+      score = Model.computeCosineSimilarity(docVector);
+      LOG.info("Setting score of {} to {}",url, score);
+    } catch (Exception e) {
+      LOG.error("Error creating Cosine Model, setting scores of urls to 1 : {}", StringUtils.stringifyException(e));
     }
-    LOG.debug("Setting score of {} to {}",url, score);
     return score;
   }
 
@@ -68,7 +65,6 @@ public class CosineSimilarity implements SimilarityModel{
   public CrawlDatum distributeScoreToOutlinks(Text fromUrl, ParseData parseData,
       Collection<Entry<Text, CrawlDatum>> targets, CrawlDatum adjust,
       int allCount) {
-    // TODO Auto-generated method stub
     return null;
   }
 
