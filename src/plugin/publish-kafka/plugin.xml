@@ -26,6 +26,10 @@
       <library name="publish-kafka.jar">
          <export name="*"/>
       </library>
+      <library name="kafka-clients-0.10.0.0.jar"/>
+      <library name="slf4j-api-1.7.21.jar"/>
+      <library name="lz4-1.3.0.jar"/>
+      <library name="snappy-java-1.1.2.4.jar"/>
    </runtime>
 
    <requires>
