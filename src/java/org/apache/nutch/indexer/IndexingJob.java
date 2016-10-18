@@ -269,7 +269,8 @@ public class IndexingJob extends NutchTool implements Tool {
     List<Path> segments = new ArrayList<Path>();
 
     if(args.containsKey(Nutch.ARG_LINKDB)){
-      if(args.containsKey(Nutch.ARG_LINKDB)) {
+      if(args.get(Nutch.ARG_LINKDB) == null ||
+          args.get(Nutch.ARG_LINKDB).equals("")) {
         Object path = args.get(Nutch.ARG_LINKDB);
         if(path instanceof Path) {
           linkdb = (Path) path;
