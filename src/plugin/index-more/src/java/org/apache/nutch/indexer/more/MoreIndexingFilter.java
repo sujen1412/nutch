@@ -89,7 +89,8 @@ public class MoreIndexingFilter implements IndexingFilter {
     addLength(doc, parse.getData(), url_s);
     addType(doc, parse.getData(), url_s, datum);
     resetTitle(doc, parse.getData(), url_s);
-
+    doc.add("status_name", datum.getStatusName(datum.getStatus()));
+    doc.add("retriesSinceFetch", ""+datum.getRetriesSinceFetch());
     return doc;
   }
 
@@ -161,6 +162,7 @@ public class MoreIndexingFilter implements IndexingFilter {
       if (!trimmed.isEmpty())
         doc.add("contentLength", trimmed);
     }
+    
     return doc;
   }
 

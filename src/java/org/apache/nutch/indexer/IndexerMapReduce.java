@@ -28,6 +28,7 @@ import org.apache.commons.codec.binary.StringUtils;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.MD5Hash;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -280,7 +281,11 @@ public class IndexerMapReduce extends Configured implements
     }
 
     NutchDocument doc = new NutchDocument();
-    doc.add("id", key.toString());
+    String urlKey = key.toString();
+    String timestamp = fetchDatum.getFetchTime()+"";
+    String idHash = MD5Hash.digest(urlKey + timestamp).toString();
+    LOG.info("ID of indexing document {}", idHash);
+    doc.add("id", idHash);
 
     final Metadata metadata = parseData.getContentMeta();
 

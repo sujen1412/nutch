@@ -135,7 +135,7 @@ public class BasicIndexingFilter implements IndexingFilter {
 
     // add timestamp when fetched, for deduplication
     doc.add("tstamp", new Date(datum.getFetchTime()));
-
+    
     return doc;
   }
 
