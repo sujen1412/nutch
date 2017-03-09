@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.nutch.metadata.Nutch;
+import org.apache.nutch.parse.Outlink;
 import org.apache.nutch.parse.Parse;
 
 import org.apache.nutch.indexer.IndexingFilter;
@@ -36,6 +37,7 @@ import org.apache.nutch.crawl.Inlinks;
 import java.lang.invoke.MethodHandles;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 
 import org.apache.hadoop.conf.Configuration;
@@ -101,7 +103,7 @@ public class BasicIndexingFilter implements IndexingFilter {
     }
 
     if (host != null) {
-      doc.add("host", host);
+      doc.add("hostname", host);
     }
 
     doc.add("url", reprUrlString == null ? urlString : reprUrlString);
@@ -111,7 +113,7 @@ public class BasicIndexingFilter implements IndexingFilter {
     if (MAX_CONTENT_LENGTH > -1 && content.length() > MAX_CONTENT_LENGTH) {
       content = content.substring(0, MAX_CONTENT_LENGTH);
     }
-    doc.add("content", StringUtil.cleanField(content));
+    doc.add("extracted_text", StringUtil.cleanField(content));
 
     // title
     String title = parse.getData().getTitle();
@@ -130,11 +132,23 @@ public class BasicIndexingFilter implements IndexingFilter {
     // add cached content/summary display policy, if available
     String caching = parse.getData().getMeta(Nutch.CACHING_FORBIDDEN_KEY);
     if (caching != null && !caching.equals(Nutch.CACHING_FORBIDDEN_NONE)) {
-      doc.add("cache", caching);
+//      doc.add("cache", caching);
     }
 
     // add timestamp when fetched, for deduplication
-    doc.add("tstamp", new Date(datum.getFetchTime()));
+    doc.add("fetch_timestamp", new Date(datum.getFetchTime()));
+    if (inlinks != null) {
+      doc.add("parents", inlinks.getInlinkURLs());
+    }    
+    doc.add("score", datum.getScore());
+    doc.add("status_name", datum.getStatusName(datum.getStatus()));
+    doc.add("retries_since_fetch", ""+datum.getRetriesSinceFetch());
+    
+    ArrayList<String> outlinks = new ArrayList();
+    for(Outlink outlink: parse.getData().getOutlinks()) {
+      outlinks.add(outlink.getToUrl());
+    }
+    doc.add("outlinks", outlinks);
     
     return doc;
   }

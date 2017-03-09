@@ -107,4 +107,14 @@ public class Inlinks implements Writable {
     return results.toArray(new String[results.size()]);
   }
 
+  public String[] getInlinkURLs() {
+    ArrayList<String> results = new ArrayList<>();
+    Iterator<Inlink> it = inlinks.iterator();
+    while (it.hasNext()) {
+      Inlink inlink = it.next();
+      String fromUrl = inlink.getFromUrl();
+      results.add(fromUrl);
+    }
+    return results.toArray(new String[results.size()]);
+  }
 }

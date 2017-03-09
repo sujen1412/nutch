@@ -89,8 +89,6 @@ public class MoreIndexingFilter implements IndexingFilter {
     addLength(doc, parse.getData(), url_s);
     addType(doc, parse.getData(), url_s, datum);
     resetTitle(doc, parse.getData(), url_s);
-    doc.add("status_name", datum.getStatusName(datum.getStatus()));
-    doc.add("retriesSinceFetch", ""+datum.getRetriesSinceFetch());
     return doc;
   }
 
@@ -116,7 +114,7 @@ public class MoreIndexingFilter implements IndexingFilter {
     }
 
     // un-stored, indexed and un-tokenized
-    doc.add("date", new Date(time));
+    doc.add("modified_time", new Date(time));
     return doc;
   }
 
@@ -230,14 +228,14 @@ public class MoreIndexingFilter implements IndexingFilter {
     }
 
     contentType = mimeType;
-    doc.add("type", contentType);
+    doc.add("content_type", contentType);
 
     // Check if we need to split the content type in sub parts
     if (conf.getBoolean("moreIndexingFilter.indexMimeTypeParts", true)) {
       String[] parts = getParts(contentType);
 
       for (String part : parts) {
-        doc.add("type", part);
+        doc.add("content_type", part);
       }
     }
 

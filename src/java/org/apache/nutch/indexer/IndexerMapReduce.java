@@ -293,7 +293,7 @@ public class IndexerMapReduce extends Configured implements
     doc.add("segment", metadata.get(Nutch.SEGMENT_NAME_KEY));
 
     // add digest, used by dedup
-    doc.add("digest", metadata.get(Nutch.SIGNATURE_KEY));
+    doc.add("signature", metadata.get(Nutch.SIGNATURE_KEY));
     
     final Parse parse = new ParseImpl(parseText, parseData);
     float boost = 1.0f;
@@ -311,7 +311,7 @@ public class IndexerMapReduce extends Configured implements
     // apply boost to all indexed fields.
     doc.setWeight(boost);
     // store boost for use by explain and dedup
-    doc.add("boost", Float.toString(boost));
+//    doc.add("boost", Float.toString(boost));
 
     try {
       // Indexing filters may also be interested in the signature
@@ -364,7 +364,7 @@ public class IndexerMapReduce extends Configured implements
       } else {
         binary = new String(content.getContent());
       }
-      doc.add("binaryContent", binary);
+      doc.add("raw_content", binary);
     }
 
     reporter.incrCounter("IndexerStatus", "indexed (add/update)", 1);
