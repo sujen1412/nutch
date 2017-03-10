@@ -39,6 +39,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -144,7 +146,7 @@ public class BasicIndexingFilter implements IndexingFilter {
     doc.add("status_name", datum.getStatusName(datum.getStatus()));
     doc.add("retries_since_fetch", ""+datum.getRetriesSinceFetch());
     
-    ArrayList<String> outlinks = new ArrayList();
+    Set<String> outlinks = new HashSet<>();
     for(Outlink outlink: parse.getData().getOutlinks()) {
       outlinks.add(outlink.getToUrl());
     }
