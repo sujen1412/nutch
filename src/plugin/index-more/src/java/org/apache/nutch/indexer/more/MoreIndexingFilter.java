@@ -16,6 +16,8 @@
  */
 package org.apache.nutch.indexer.more;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -229,6 +231,13 @@ public class MoreIndexingFilter implements IndexingFilter {
 
     contentType = mimeType;
     doc.add("content_type", contentType);
+    try {
+      doc.add("doc_type", getMemexObjectType(contentType));
+    }catch (Exception e) {
+      LOG.warn("Could not get doc_type : {}", e.getMessage());
+    }
+
+
 
     // Check if we need to split the content type in sub parts
     if (conf.getBoolean("moreIndexingFilter.indexMimeTypeParts", true)) {
@@ -245,6 +254,24 @@ public class MoreIndexingFilter implements IndexingFilter {
     return doc;
   }
 
+  private String getMemexObjectType(String type) throws IOException{
+
+    BufferedReader reader = new BufferedReader(
+        conf.getConfResourceAsReader("memex-text-mimetypes.txt"));
+    String line;
+    HashSet<String> mimeTypes = new HashSet<>();
+    while ((line = reader.readLine()) != null) {
+      if (StringUtils.isNotBlank(line) && !line.startsWith("#")) {
+        line.trim();
+        mimeTypes.add(line);
+      }
+    }
+    if (mimeTypes.contains(type)) {
+      return "webpage";
+    }
+    return "object";
+
+  }
   /**
    * Utility method for splitting mime type into type and subtype.
    * 
