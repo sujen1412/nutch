@@ -383,9 +383,9 @@ public class ParseOutputFormat implements OutputFormat<Text, Parse> {
         toUrl = normalizers.normalize(toUrl, urlNormalizerScope); // normalize
                                                                   // the url
       }
-      if (filters != null) {
-        toUrl = filters.filter(toUrl); // filter the url
-      }
+//      if (filters != null) {
+//        toUrl = filters.filter(toUrl); // filter the url
+//      }
       if (toUrl == null) {
         return null;
       }
